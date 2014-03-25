@@ -1,7 +1,7 @@
 {
   "name": "level-content-cache",
   "description": "cache a mutable resource into a content-addressable-store",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/dominictarr/level-http-cache",
   "repository": {
     "type": "git",
