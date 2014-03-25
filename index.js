@@ -11,6 +11,7 @@ function isString (s) {
 
 module.exports = function (db, cachedb, opts) {  
   opts = opts || {}
+  var inFlight = {}
   var getter = opts.getter || function (key, meta, cb) {
     request({url: key}, function (err, response, body) {
       cb(err, body, {ts: Date.now()})
@@ -20,6 +21,13 @@ module.exports = function (db, cachedb, opts) {
   if(!cachedb || isString(cachedb)) {
     cachedb = Cas(db.sublevel(isString(cachedb) ? cachedb : 'cache'))
   }
+
+  //if there are two concurrent requests for the same url,
+  //then only fetch once, but return the same value to both.
+
+  //also, you should be able to get the value directly by the hash.
+  //so if the url is a hash, just return it directly.
+
   return function get (url, _opts, cb) {
     if(!cb) cb = _opts, _opts = {}
     function opt (name, def) {
@@ -48,33 +56,41 @@ module.exports = function (db, cachedb, opts) {
       //have a noop, so fetch can be used to refresh a url.
       if(!cb) cb = function () {}
 
-      //TODO: what if there are two concurrent fetches?
-      //make the second one wait, and give the same response to both.
-
       // in the case that the cache already had that value
       // (depends on implementation details of the source)
 
+      if(inFlight[url]) return inFlight[url].push(cb)
+
+      inFlight[url] = [cb]
+
+      function done (err, body, meta) {
+        var cbs = inFlight[url], err
+        delete inFlight[url]
+        while(cbs.length)
+          cbs.shift().call(null, err, body, meta)
+      }
+      
       getter(url, meta || {}, function (err, body, meta) {
         meta = meta || {}
         meta.fetched = true
         if(!body && meta.hash)
           cachedb.get(meta.hash, function (err, content) {
-            if(err) return cb(err)
+            if(err) return done(err)
             meta.cached = true
-            cb(null, content, meta)
+            done(null, content, meta)
           })
         else
           cachedb.add(body, _opts, function (err, hash, cached) {
-            if(err) return cb(err)
+            if(err) return done(err)
             //possibly the content was cached correctly already.
             //in which case we could still update the mutable side,
             //but remember to set meta.cached=true so the user knows.
             meta.hash = hash
             meta.ts = meta.ts || Date.now()
             db.put(url, meta, function (err) {
-              if(err) return cb(err)
+              if(err) return done(err)
               meta.cached = cached
-              cb(null, body, meta)
+              done(null, body, meta)
             })
           })
       })
