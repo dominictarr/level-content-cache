@@ -23,17 +23,21 @@ var data = {
 }
 
 var db = sub(level('test-content-cache', {encoding: 'json'}))
+var count = 0
 var get = ContentCache(db, 'cache', {
   encoding: 'utf8',
   getter: function (key, meta, cb) {
     //... okay what should I test this with?
-    if(data[key]) {
-      console.error('GET', key)
-      cb(null, data[key])
-    } else {
-      console.error('GET', key, 'ERROR - Not Found')
-      cb(new Error('not found'))
-    }
+    count ++
+    process.nextTick(function () {
+      if(data[key]) {
+        console.error('GET', key)
+        cb(null, data[key])
+      } else {
+        console.error('GET', key, 'ERROR - Not Found')
+        cb(new Error('not found'))
+      }
+    })
   }
 })
 
@@ -75,4 +79,24 @@ tape('age', function (t) {
     })
   })
 
+})
+
+tape('concurrent fetch', function (t) {
+  var _count = count
+  var n = 2, a, b
+  get('blah', {fetch: true}, function (err, content, meta) {
+    a = content
+    t.equal(count, _count + 1); next()
+  })
+  get('blah', {fetch: true}, function (err, content, meta) {
+    b = content
+    t.equal(count, _count + 1); next()
+  })
+
+  function next () {
+    if(--n) return
+    //these should be exactly the same object.
+    t.strictEqual(a, b)
+    t.end()
+  }
 })
