@@ -100,3 +100,14 @@ tape('concurrent fetch', function (t) {
     t.end()
   }
 })
+
+tape('retrive a value directly by the hash', function (t) {
+  get('blah', function (err, content, meta) {
+    if(err) throw err
+    get(meta.hash, function (err, _content) {
+      if(err) throw err
+      t.equal(content, _content)
+      t.end()
+    })
+  })
+})
