@@ -30,6 +30,11 @@ module.exports = function (db, cachedb, opts) {
 
   return function get (url, _opts, cb) {
     if(!cb) cb = _opts, _opts = {}
+
+    //if you request a hash you just get that directly.
+    if(cachedb.isHash(url))
+      return cachedb.get(url, _opts, cb)
+
     function opt (name, def) {
       if(_opts && _opts[name] !== undefined) return _opts[name]
       if(opts  && opts[name]  !== undefined) return _opts[name]

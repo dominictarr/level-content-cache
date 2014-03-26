@@ -8,6 +8,10 @@ module.exports = function (db, alg) {
     ? require('crypto').createHash.bind(null, alg)
     : alg || createSha256d
 
+  var l = createHash().digest('hex').length
+
+  var rx = new RegExp('^[0-9a-f]{'+l+'}$')
+
   function shasum (content, enc) {
     return createHash().update(content, enc).digest('hex')
   }
@@ -28,6 +32,10 @@ module.exports = function (db, alg) {
     return db.get(hash, function (err) {
       cb(err, !err)
     })
+  }
+
+  db.isHash = function (hash) {
+    return rx.test(hash)
   }
 
   return db
