@@ -111,3 +111,14 @@ tape('retrive a value directly by the hash', function (t) {
     })
   })
 })
+
+//TODO TEST FOR ERROR
+
+tape('error', function (t) {
+
+  get('xxx', function (err) {
+    t.ok(err)
+    t.end()
+  })
+
+})
