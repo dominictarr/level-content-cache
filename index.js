@@ -76,6 +76,7 @@ module.exports = function (db, cachedb, opts) {
       }
       
       getter(url, meta || {}, function (err, body, meta) {
+        if(err) return done(err)
         meta = meta || {}
         meta.fetched = true
         if(!body && meta.hash)
