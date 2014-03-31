@@ -1,5 +1,7 @@
 var request = require('request')
 var Cas = require('./level-content-addressable-store')
+var streamify = require('streamify')
+
 const ONE_HOUR = 60*60e3
 
 // the getter and the db and the content db should all be separated.
@@ -28,7 +30,32 @@ module.exports = function (db, cachedb, opts) {
   //also, you should be able to get the value directly by the hash.
   //so if the url is a hash, just return it directly.
 
-  return function get (url, _opts, cb) {
+  get.getStream =
+  get.createStream = function (url, opts, cb) {
+    if('function' === typeof opts)
+      cb = opts, opts = {}
+    var stream = cb ? null : streamify()
+
+    if(cachedb.isHash(url)) {
+      stream = cachedb.getStream(url, opts)
+      stream.meta = {hash: url, fetched: false, cached: true}
+      if(cb) cb(null, stream)
+      return stream
+    }
+
+    db.get(url, function (err, meta) {
+      if(err) return stream.emit('error', err)
+
+      //or get the stream.
+      var s = cachedb.getStream(meta.hash, opts)
+      s.meta = meta
+      cb ? cb(null, s) : stream.resolve(s)
+    })
+
+    return stream
+  }
+
+  function get (url, _opts, cb) {
     if(!cb) cb = _opts, _opts = {}
 
     //if you request a hash you just get that directly.
@@ -47,7 +74,7 @@ module.exports = function (db, cachedb, opts) {
 
     db.get(url, function (err, meta) {
       meta = meta || {}
-      if(err && err.notFound)
+      if(err && err.notFound || !meta.hash)
         fetch(meta, cb)
       else if(Date.now() - meta.ts > age || opt('fetch', false) === true)
         fetch(meta, cb)
@@ -57,7 +84,6 @@ module.exports = function (db, cachedb, opts) {
           meta.fetched = false
           cb(err, content, meta)
         })
-        //value will have 
     })
 
     function fetch (meta) {
@@ -80,8 +106,10 @@ module.exports = function (db, cachedb, opts) {
       
       getter(url, meta || {}, function (err, body, meta) {
         if(err) return done(err)
+
         meta = meta || {}
         meta.fetched = true
+
         if(!body && meta.hash)
           cachedb.get(meta.hash, function (err, content) {
             if(err) return done(err)
@@ -96,6 +124,7 @@ module.exports = function (db, cachedb, opts) {
             //but remember to set meta.cached=true so the user knows.
             meta.hash = hash
             meta.ts = meta.ts || Date.now()
+            meta.key = url
             db.put(url, meta, function (err) {
               if(err) return done(err)
               meta.cached = cached
@@ -105,4 +134,6 @@ module.exports = function (db, cachedb, opts) {
       })
     }
   }
+
+  return get
 }
