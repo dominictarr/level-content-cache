@@ -1,7 +1,7 @@
 {
   "name": "level-content-cache",
   "description": "cache a mutable resource into a content-addressable-store",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "homepage": "https://github.com/dominictarr/level-http-cache",
   "repository": {
     "type": "git",
@@ -9,10 +9,12 @@
   },
   "dependencies": {
     "request": "~2.34.0",
-    "sha256d": "~1.0.0"
+    "sha256d": "~1.0.0",
+    "streamify": "~0.2.3"
   },
   "devDependencies": {
-    "level-test": "~1.6.2"
+    "level-test": "~1.6.2",
+    "concat-stream": "~1.4.4"
   },
   "scripts": {
     "test": "set -e; for t in test/*.js; do node $t; done"
