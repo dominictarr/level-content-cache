@@ -3,7 +3,7 @@ var tape = require('tape')
 var level = require('level-test')()
 var sub = require('level-sublevel')
 var ContentCache = require('../')
-
+var concat = require('concat-stream')
 /*
 Code Paths
 
@@ -122,3 +122,25 @@ tape('error', function (t) {
   })
 
 })
+
+tape('createStream', function (t) {
+  get.createStream('blah')
+    .pipe(concat(function (data) {
+      t.equal('bbbbbbbbb', data.toString())
+      t.end()
+    }))
+})
+
+tape('createStream(cb)', function (t) {
+  get.createStream('blah', function (err, stream) {
+    if(err) throw err
+    stream
+    .pipe(concat(function (data) {
+      t.equal('bbbbbbbbb', data.toString())
+      t.end()
+    }))
+  })
+})
+
+
+
