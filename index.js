@@ -74,9 +74,10 @@ module.exports = function (db, cachedb, opts) {
 
     db.get(url, function (err, meta) {
       meta = meta || {}
+      var offline = !(opt('offline') === true || opt('online') === false)
       if(err && err.notFound || !meta.hash)
         fetch(meta, cb)
-      else if(Date.now() - meta.ts > age || opt('fetch', false) === true)
+      else if(online && Date.now() - meta.ts > age || opt('fetch', false) === true)
         fetch(meta, cb)
       else
         cachedb.get(meta.hash, function (err, content) {
@@ -133,6 +134,10 @@ module.exports = function (db, cachedb, opts) {
           })
       })
     }
+  }
+
+  get._del = function (key, cb) {
+    db.del(key, cb)
   }
 
   return get
