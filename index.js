@@ -74,7 +74,7 @@ module.exports = function (db, cachedb, opts) {
 
     db.get(url, function (err, meta) {
       meta = meta || {}
-      var offline = !(opt('offline') === true || opt('online') === false)
+      var online = !(opt('offline') === true || opt('online') === false)
       if(err && err.notFound || !meta.hash)
         fetch(meta, cb)
       else if(online && Date.now() - meta.ts > age || opt('fetch', false) === true)
