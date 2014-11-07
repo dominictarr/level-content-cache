@@ -8,13 +8,15 @@
     "url": "git://github.com/dominictarr/level-http-cache.git"
   },
   "dependencies": {
-    "request": "~2.34.0",
+    "request": "2",
     "sha256d": "~1.0.0",
     "streamify": "~0.2.3"
   },
   "devDependencies": {
     "level-test": "~1.6.2",
-    "concat-stream": "~1.4.4"
+    "concat-stream": "~1.4.4",
+    "tape": "~2.13.4",
+    "level-sublevel": "~5.2.0"
   },
   "scripts": {
     "test": "set -e; for t in test/*.js; do node $t; done"
